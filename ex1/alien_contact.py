@@ -4,6 +4,12 @@ from datetime import datetime
 
 
 class ContactType(Enum):
+    """Ways in which alien contact can take place.
+
+    Pydantic converts a matching string (e.g. "radio") into the
+    corresponding member; any other value raises a ValidationError.
+    """
+
     RADIO = "radio"
     VISUAL = "visual"
     PHYSICAL = "physical"
@@ -11,6 +17,13 @@ class ContactType(Enum):
 
 
 class AlienContact(BaseModel):
+    """Validated report of an alien contact.
+
+    Field() constraints check each value on its own. The
+    check_rules() model validator then checks business rules that
+    depend on combinations of fields.
+    """
+
     contact_id: str = Field(min_length=5, max_length=15)
     timestamp: datetime
     location: str = Field(min_length=3, max_length=100)
@@ -23,6 +36,13 @@ class AlienContact(BaseModel):
 
     @model_validator(mode='after')
     def check_rules(self) -> "AlienContact":
+        """Check the business rules after all fields are validated.
+
+        Runs automatically when an AlienContact is created. Raising a
+        ValueError makes Pydantic wrap it in a ValidationError. The
+        returned instance is the object the caller receives.
+        """
+
         if not self.contact_id.startswith("AC"):
             raise ValueError(
                 "Contact ID must start with 'AC' (Alien Contact)"
@@ -45,7 +65,30 @@ class AlienContact(BaseModel):
         return self
 
 
+def print_validation_errors(error: ValidationError) -> None:
+    """Print a readable message for every error in a ValidationError.
+
+    Errors raised in check_rules() have type "value_error" and
+    keep the original exception in ctx. Printing that avoids the
+    "Value error, " prefix that err["msg"] adds. Other errors
+    (e.g. Field constraints) have no "error" key, so use msg.
+    """
+
+    for err in error.errors():
+        if err["type"] == "value_error":
+            print(err["ctx"]["error"])
+        else:
+            print(err["msg"])
+
+
 def main() -> None:
+    """Demonstrate AlienContact validation with a valid and invalid case.
+
+    First creates a valid contact report and prints its details, then
+    tries to create a report that breaks a business rule and prints
+    the resulting validation error message.
+    """
+
     print("Alien Contact Log Validation")
     print("========================================")
     try:
@@ -61,6 +104,7 @@ def main() -> None:
         )
         print("Valid contact report:")
         print(f"ID: {valid_contact.contact_id}")
+        # .value gives "radio" instead of "ContactType.RADIO"
         print(f"Type: {valid_contact.contact_type.value}")
         print(f"Location: {valid_contact.location}")
         print(f"Signal: {valid_contact.signal_strength}/10")
@@ -70,8 +114,7 @@ def main() -> None:
     except ValidationError as e:
         # Should not happen; shown in case the valid data is wrong
         print("Unexpected validation error:")
-        for err in e.errors():
-            print(err["ctx"]["error"])
+        print_validation_errors(e)
     print("\n========================================")
     # Invalid case: telepathic contact with less than 3 witnesses
     try:
@@ -90,8 +133,7 @@ def main() -> None:
         print(f"Witnesses: {invalid_contact.witness_count}")
     except ValidationError as e:
         print("Expected validation error:")
-        for err in e.errors():
-            print(err["ctx"]["error"])
+        print_validation_errors(e)
 
 
 if __name__ == "__main__":

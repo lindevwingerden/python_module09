@@ -30,7 +30,6 @@ def main() -> None:
     then tries to create a station that breaks a constraint and
     prints the resulting validation error message.
     """
-
     print("Space Station Data Validation")
     print("========================================")
     try:

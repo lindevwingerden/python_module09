@@ -42,7 +42,6 @@ class AlienContact(BaseModel):
         ValueError makes Pydantic wrap it in a ValidationError. The
         returned instance is the object the caller receives.
         """
-
         if not self.contact_id.startswith("AC"):
             raise ValueError(
                 "Contact ID must start with 'AC' (Alien Contact)"
@@ -73,7 +72,6 @@ def print_validation_errors(error: ValidationError) -> None:
     "Value error, " prefix that err["msg"] adds. Other errors
     (e.g. Field constraints) have no "error" key, so use msg.
     """
-
     for err in error.errors():
         if err["type"] == "value_error":
             print(err["ctx"]["error"])
@@ -88,7 +86,6 @@ def main() -> None:
     tries to create a report that breaks a business rule and prints
     the resulting validation error message.
     """
-
     print("Alien Contact Log Validation")
     print("========================================")
     try:
